@@ -101,7 +101,7 @@
         // Fetch Previous Messages from the Server
         function fetchPreviousMessages() {
             if (room) {
-                axios.get(`https://erp.novelofficedfw.com/api/messages?room=${room}`)
+                axios.get(`https://novelofficedfw.com/api/messages?room=${room}`)
                     .then(response => {
                         console.log("Res = ", response);
 
