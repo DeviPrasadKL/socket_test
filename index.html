@@ -105,7 +105,7 @@
                     .then(response => {
                         console.log("Res = ", response);
 
-                        const messages = response.data.messages || [];
+                        const messages = response.data.message || [];
                         setMessages(messages); // Show previous messages when joining the room
                     })
                     .catch(error => {
