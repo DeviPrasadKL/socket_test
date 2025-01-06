@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -13,18 +12,16 @@
             overflow: scroll;
             height: 25rem;
         }
-        .name-div{
+        .name-div {
             display: flex;
         }
     </style>
 </head>
-
 <body>
     <h2>Chat Application</h2>
     <div class="name-div">
         <h2> Name = &nbsp;</h2>
         <h2 id="username"></h2>
-        <!-- <input type="text" id="username" placeholder="Enter your name"> -->
     </div>
     <div>
         <input type="text" id="room" placeholder="Room number" value="7">
@@ -42,7 +39,6 @@
     </div>
 
     <script>
-        // const socket = io.connect('https://novelhouston.com/');
         const socket = io.connect('https://erp.novelofficedfw.com');
         let room = '';
         let username = '';
@@ -54,31 +50,28 @@
         const msgInput = document.getElementById('msg');
         const messagesList = document.getElementById('messagesList');
         const usernameInput = document.getElementById('username');
-
         const roomInput = document.getElementById('room');
 
-        // Fetch public IP address and set it as the username
-        window.onload = function () {
-            // getPublicIP(); // Call the function to fetch and set the public IP
-            usernameInput.innerHTML = getBrowserInfo();
-        };
-
-        // Fetch public IP address function
-        function getPublicIP() {
-            axios.get('https://api.ipify.org?format=json')
-                .then(response => {
-                    const ip = response.data.ip;
-                    usernameInput.innerHTML = ip; // Use the IP address as the username
-                    console.log('Your IP address is:', ip);
-                })
-                .catch(error => {
-                    console.error('Error fetching IP:', error);
-                });
+        // Retrieve the stored socket ID from localStorage (if any)
+        let storedSocketId = localStorage.getItem('socketId');
+        
+        // Check if a socket ID is already in local storage, if not, assign a new one
+        if (!storedSocketId) {
+            socket.on('connect', () => {
+                storedSocketId = socket.id;
+                localStorage.setItem('socketId', storedSocketId); // Store the socket ID in local storage
+                console.log('Connected to server:', storedSocketId);
+                username = storedSocketId; // Set socket ID as the username
+                usernameInput.innerHTML = username; // Display socket ID in the "Name" field
+            });
+        } else {
+            username = storedSocketId; // Use the stored socket ID
+            usernameInput.innerHTML = username; // Display stored socket ID in the "Name" field
+            console.log('Using stored socket ID:', username);
         }
 
         // Join Room
         function joinRoom() {
-            username = usernameInput.innerHTML;
             room = roomInput.value.trim();
             if (room && username) {
                 socket.emit("join_room", { room, username });
@@ -97,7 +90,6 @@
                 room = "";
                 username = "";
                 roomInput.value = "";
-                // usernameInput.value = "";
             }
         }
 
@@ -128,8 +120,6 @@
             if (room) {
                 axios.get(`https://erp.novelofficedfw.com/api/messages?room=${room}`)
                     .then(response => {
-                        console.log("Res = ", response);
-
                         const messages = response.data.message || [];
                         setMessages(messages); // Show previous messages when joining the room
                     })
@@ -141,9 +131,6 @@
 
         // Listen for received messages from the server
         socket.on("receive_message", (data) => {
-            console.log("Received message:", data);
-
-            // Append the new message below the old ones
             const newMessage = { user: data.username, message: data.msg };
             setMessages([newMessage]);
         });
@@ -164,41 +151,6 @@
             }
         });
 
-         // Function to get browser name and version
-         function getBrowserInfo() {
-            const userAgent = navigator.userAgent;
-            let browserName = "Unknown Browser";
-            let browserVersion = "Unknown Version";
-
-            // Check for different browsers
-            if (/chrome|crios|crmo/i.test(userAgent)) {
-                browserName = "Google Chrome";
-                const version = userAgent.match(/chrome\/([\d.]+)/i);
-                browserVersion = version ? version[1] : "Unknown";
-            } else if (/firefox|fxios/i.test(userAgent)) {
-                browserName = "Mozilla Firefox";
-                const version = userAgent.match(/firefox\/([\d.]+)/i);
-                browserVersion = version ? version[1] : "Unknown";
-            } else if (/safari/i.test(userAgent)) {
-                browserName = "Safari";
-                const version = userAgent.match(/version\/([\d.]+)/i);
-                browserVersion = version ? version[1] : "Unknown";
-            } else if (/edge/i.test(userAgent)) {
-                browserName = "Microsoft Edge";
-                const version = userAgent.match(/edg\/([\d.]+)/i);
-                browserVersion = version ? version[1] : "Unknown";
-            } else if (/msie|trident/i.test(userAgent)) {
-                browserName = "Internet Explorer";
-                const version = userAgent.match(/(?:msie |rv:)([\d.]+)/i);
-                browserVersion = version ? version[1] : "Unknown";
-            }
-
-            return `${browserName} (Version: ${browserVersion})`;
-        }
-
-    </script>
-
     </script>
 </body>
-
 </html>
