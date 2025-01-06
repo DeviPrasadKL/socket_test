@@ -13,13 +13,18 @@
             overflow: scroll;
             height: 25rem;
         }
+        .name-div{
+            display: flex;
+        }
     </style>
 </head>
 
 <body>
     <h2>Chat Application</h2>
-    <div>
-        <input type="text" id="username" placeholder="Enter your name">
+    <div class="name-div">
+        <h2> Name = &nbsp;</h2>
+        <h2 id="username"></h2>
+        <!-- <input type="text" id="username" placeholder="Enter your name"> -->
     </div>
     <div>
         <input type="text" id="room" placeholder="Room number" value="7">
@@ -51,9 +56,27 @@
         const usernameInput = document.getElementById('username');
         const roomInput = document.getElementById('room');
 
+        // Fetch public IP address and set it as the username
+        window.onload = function () {
+            getPublicIP(); // Call the function to fetch and set the public IP
+        };
+
+        // Fetch public IP address function
+        function getPublicIP() {
+            axios.get('https://api.ipify.org?format=json')
+                .then(response => {
+                    const ip = response.data.ip;
+                    usernameInput.innerHTML = ip; // Use the IP address as the username
+                    console.log('Your IP address is:', ip);
+                })
+                .catch(error => {
+                    console.error('Error fetching IP:', error);
+                });
+        }
+
         // Join Room
         function joinRoom() {
-            username = usernameInput.value.trim();
+            username = usernameInput.innerHTML.trim();
             room = roomInput.value.trim();
             if (room && username) {
                 socket.emit("join_room", { room, username });
@@ -72,7 +95,7 @@
                 room = "";
                 username = "";
                 roomInput.value = "";
-                usernameInput.value = "";
+                // usernameInput.value = "";
             }
         }
 
