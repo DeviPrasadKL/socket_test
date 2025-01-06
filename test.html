@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Socket Test - Concurrent Messages</title>
+    <script src="https://cdn.jsdelivr.net/npm/socket.io-client@4.7.1/dist/socket.io.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+
+    <style>
+        #messagesList {
+            overflow: scroll;
+            height: 25rem;
+        }
+        .name-div {
+            display: flex;
+        }
+    </style>
+</head>
+<body>
+    <h2>Chat Application - Concurrent Message Test</h2>
+    <div class="name-div">
+        <h2> Name = &nbsp;</h2>
+        <h2 id="username"></h2>
+    </div>
+    <div>
+        <input type="text" id="room" placeholder="Room number" value="7">
+        <button id="joinRoomBtn" onclick="joinRoom()">Join Room</button>
+        <button id="leaveRoomBtn" onclick="leaveRoom()">Leave Room</button>
+    </div>
+    <div>
+        <h3>Messages:</h3>
+        <ul id="messagesList"></ul>
+    </div>
+
+    <script>
+        // Server URL (replace with your actual server URL)
+        const serverUrl = 'https://erp.novelofficedfw.com';
+
+        // Number of concurrent clients (20 sockets)
+        const numClients = 20;
+        const clients = [];
+        let room = document.getElementById('room').value.trim();
+        let username = 'Client';
+
+        // Elements
+        const messagesList = document.getElementById('messagesList');
+
+        // Join Room
+        function joinRoom() {
+            if (room) {
+                for (let i = 0; i < numClients; i++) {
+                    const socket = io.connect(serverUrl);
+                    clients.push(socket);
+                    const clientUsername = `client${i + 1}`;
+
+                    socket.on('connect', () => {
+                        console.log(`${clientUsername} connected with socket ID: ${socket.id}`);
+                        socket.emit('join_room', { room, username: clientUsername });
+                    });
+
+                    socket.on('receive_message', (data) => {
+                        const newMessage = { user: data.username, message: data.msg };
+                        setMessages([newMessage]);
+                    });
+
+                    // Send message from this socket after a short delay
+                    setInterval(() => {
+                        const message = `Message from ${clientUsername}`;
+                        socket.emit('sendMessage', { msg: message, room, username: clientUsername });
+                    }, 100); // Send every 100ms (adjust for minimal delay)
+                }
+                console.log(`All clients connected to room: ${room}`);
+                fetchPreviousMessages(); // Fetch previous messages on room join
+            }
+        }
+
+        // Leave Room
+        function leaveRoom() {
+            if (room) {
+                clients.forEach(socket => {
+                    socket.emit('leave_room', { room, username });
+                    console.log(`Left room: ${room}`);
+                });
+                setMessages([]); // Clear all messages when leaving the room
+                room = "";
+            }
+        }
+
+        // Display Messages
+        function setMessages(newMessages) {
+            newMessages.forEach(message => {
+                const li = document.createElement('li');
+                li.innerHTML = `<strong>${message.user}:</strong> ${message.message}`;
+                messagesList.appendChild(li);
+            });
+
+            // Scroll to the bottom of the messages list
+            messagesList.scrollTop = messagesList.scrollHeight;
+        }
+
+        // Fetch Previous Messages from the Server
+        function fetchPreviousMessages() {
+            if (room) {
+                axios.get(`${serverUrl}/api/messages?room=${room}`)
+                    .then(response => {
+                        const messages = response.data.message || [];
+                        setMessages(messages); // Show previous messages when joining the room
+                    })
+                    .catch(error => {
+                        console.error("Error fetching previous messages:", error);
+                    });
+            }
+        }
+    </script>
+</body>
+</html>
